@@ -17,7 +17,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import useSWR, {useSWRConfig} from "swr";
+import useSWR from "swr";
 import {useState} from "react";
 import {HiFire} from "react-icons/hi";
 
@@ -38,16 +38,16 @@ class UsersApi {
         return Promise.resolve([...this.users])
     }
 
-    put(data: UserRow[]): Promise<void> {
+    put(data: UserRow[]): Promise<UserRow[]> {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                if (Math.random() > 0.9) {
+                if (Math.random() > 0.66) {
                     reject('Update failed');
                     return;
                 }
                 this.users = [...data];
-                resolve();
-            }, 1000);
+                resolve(this.users);
+            }, 200);
         });
     }
 
@@ -79,6 +79,7 @@ function SortableItem({user}: { user: UserRow }) {
         <Table.Row ref={setNodeRef} style={style} className='bg-white relative'>
             <Table.Cell>{user.name}</Table.Cell>
             <Table.Cell>{user.email}</Table.Cell>
+            <Table.Cell>{user.sortOrder}</Table.Cell>
             <Table.Cell ref={setActivatorNodeRef} {...listeners} {...attributes}
                         className='w-[60px] hover:text-slate-800'>
                 <svg
@@ -99,8 +100,8 @@ let timer: number;
 
 export default function SwrExample() {
     const [toast, setToast] = useState('');
-    const {mutate} = useSWRConfig();
-    const {data, error, isLoading} = useSWR<UserRow[]>('/api/user', async () => await usersApi.get());
+    // const {mutate} = useSWRConfig();
+    const {data, error, isLoading, mutate} = useSWR<UserRow[]>('/api/user', async () => await usersApi.get());
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -117,21 +118,20 @@ export default function SwrExample() {
             const oldIndex = data.findIndex(item => item.id === active.id);
             const newIndex = data.findIndex(item => item.id === over.id);
             const newOrder = arrayMove(data, oldIndex, newIndex);
+            const newData = newOrder.map((user, i) => ({...user, sortOrder: i}));
             await mutate(
-                '/api/user',
-                usersApi.put(newOrder)
-                    .then(() => newOrder)
+                usersApi.put(newData)
                     .catch(() => {
                         setToast('Failed to update order');
                         clearTimeout(timer);
                         timer = setTimeout(() => {
                             setToast('');
-                        }, 2000);
+                        }, 4000);
                         return data;
                     }),
                 {
                     rollbackOnError: true,
-                    optimisticData: newOrder
+                    optimisticData: newData
                 }
             );
         }
@@ -152,6 +152,7 @@ export default function SwrExample() {
                     <Table.Head>
                         <Table.HeadCell>Name</Table.HeadCell>
                         <Table.HeadCell>Email</Table.HeadCell>
+                        <Table.HeadCell>Order</Table.HeadCell>
                         <Table.HeadCell>&nbsp;</Table.HeadCell>
                     </Table.Head>
                     <Table.Body className="divide-y bg-slate-300">
@@ -159,13 +160,14 @@ export default function SwrExample() {
                             items={data.map(item => item.id)}
                             strategy={verticalListSortingStrategy}
                         >
-                            {data.map(user => <SortableItem key={user.id} user={user}/>)}
+                            {data.sort((a, b) => a.sortOrder - b.sortOrder).map(user => <SortableItem key={user.id}
+                                                                                                      user={user}/>)}
                         </SortableContext>
                     </Table.Body>
                 </Table>
             </DndContext>
             {toast ? (
-                <Toast className='absolute top-10 right-10 z-10'>
+                <Toast className='fixed top-10 right-10 z-10'>
                     <div
                         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-500 dark:bg-red-800 dark:text-red-200">
                         <HiFire className="h-5 w-5"/>

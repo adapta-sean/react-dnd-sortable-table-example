@@ -17,9 +17,9 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {useEffect, useState} from "react";
+import {useState} from "react";
 
-type User = { id: number, name: string, email: string };
+type User = { id: number, name: string, email: string, sortOrder: number };
 
 const users = [
     {id: 1, name: "Jake", email: "j.jackson@example.com", sortOrder: 0},
@@ -53,6 +53,7 @@ function SortableItem({user}: { user: User }) {
         <Table.Row ref={setNodeRef} style={style} className='bg-white relative'>
             <Table.Cell>{user.name}</Table.Cell>
             <Table.Cell>{user.email}</Table.Cell>
+            <Table.Cell>{user.sortOrder}</Table.Cell>
             <Table.Cell ref={setActivatorNodeRef} {...listeners} {...attributes}
                         className='w-[60px] hover:text-slate-800'>
                 <svg
@@ -87,15 +88,11 @@ export default function TableExample() {
             setItems((items) => {
                 const oldIndex = items.findIndex(item => item.id === active.id);
                 const newIndex = items.findIndex(item => item.id === over.id);
-
-                return arrayMove(items, oldIndex, newIndex);
+                const newOrder = arrayMove(items, oldIndex, newIndex);
+                return newOrder.map((user, i) => ({...user, sortOrder: i}));
             });
         }
     };
-
-    useEffect(() => {
-        console.log('save new order', items.map((item, i) => ({...item, sortOrder: i})))
-    }, [items]);
 
     return (
         <DndContext
@@ -107,6 +104,7 @@ export default function TableExample() {
                 <Table.Head>
                     <Table.HeadCell>Name</Table.HeadCell>
                     <Table.HeadCell>Email</Table.HeadCell>
+                    <Table.HeadCell>Order</Table.HeadCell>
                     <Table.HeadCell>&nbsp;</Table.HeadCell>
                 </Table.Head>
                 <Table.Body className="divide-y bg-slate-300">
