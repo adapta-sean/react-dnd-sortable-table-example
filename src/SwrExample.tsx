@@ -41,7 +41,7 @@ class UsersApi {
     put(data: UserRow[]): Promise<void> {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                if (Math.random() > 0.33) {
+                if (Math.random() > 0.9) {
                     reject('Update failed');
                     return;
                 }
