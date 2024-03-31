@@ -100,7 +100,6 @@ let timer: number;
 
 export default function SwrExample() {
     const [toast, setToast] = useState('');
-    // const {mutate} = useSWRConfig();
     const {data, error, isLoading, mutate} = useSWR<UserRow[]>('/api/user', async () => await usersApi.get());
 
     const sensors = useSensors(
@@ -138,8 +137,8 @@ export default function SwrExample() {
     };
 
     if (isLoading) return <p>Loading…</p>;
-    if (error) return <p>{JSON.stringify(error)}</p>;
-    if (!data || !data.length) return <p>No Items</p>;
+    if (error) return <p>Error getting users</p>;
+    if (!data || !data.length) return <p>No users</p>;
 
     return (
         <>
